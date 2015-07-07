@@ -1,0 +1,56 @@
+{
+  "root": "dist",
+  "js" : {
+    "src"        : "./src/js/**/*.js",
+    "dest"       : "./dist/js",
+    "masterName" : "index.js",
+    "minExt"     : ".min.js",
+    "sourcemaps": {
+      "conf": {
+        "loadMaps" : true
+      },
+      "dest" : "./"
+    },
+    "uglify": {
+      "cleanConf": {
+        "compress": false,
+        "mangle": false,
+        "output": {
+          "beautify": true,
+          "indent_level": 2,
+          "quote_keys": true,
+          "max_line_len": 130,
+          "bracketize": true
+        }
+      },
+      "minConf": {
+        "preserveComments" : "some",
+        "compress": {
+          "unsafe": true,
+          "hoist_vars": true
+        }
+      }
+    }
+  },
+  "stylus" : {
+    "src"        : "./src/stylus/**/*.styl",
+    "dest"       : "./dist/css",
+    "masterName" : "index.css",
+    "minExt"     : ".min.css",
+    "options" : {
+      "fullCompression": {
+        "compress": true,
+        "include" : [
+          "./nib",
+          "./stylus-type-utils"
+        ]
+      }
+    },
+    "sourcemaps": {
+      "conf": {
+        "loadMaps" : true
+      },
+      "dest" : "./"
+    }
+  }
+}

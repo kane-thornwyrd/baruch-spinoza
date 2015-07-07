@@ -31,5 +31,26 @@
         }
       }
     }
+  },
+  "stylus" : {
+    "src"        : "./src/stylus/**/*.styl",
+    "dest"       : "./dist/css",
+    "masterName" : "index.css",
+    "minExt"     : ".min.css",
+    "options" : {
+      "fullCompression": {
+        "compress": true,
+        "include" : [
+          "./nib",
+          "./stylus-type-utils"
+        ]
+      }
+    },
+    "sourcemaps": {
+      "conf": {
+        "loadMaps" : true
+      },
+      "dest" : "./"
+    }
   }
 }

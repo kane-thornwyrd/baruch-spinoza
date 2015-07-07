@@ -1,19 +1,22 @@
 'use strict';
 
 var
-  gulp        = require('gulp'),
-  cog         = require('gulp-cog'),
-  source      = require('vinyl-source-stream'),
-  buffer      = require('vinyl-buffer'),
-  rename      = require('gulp-rename'),
-  uglify      = require('gulp-uglify'),
-  sourcemaps  = require('gulp-sourcemaps'),
-  gutil       = require('gulp-util'),
-  concat      = require('gulp-concat'),
-  foreach     = require('gulp-foreach'),
-  browserSync = require('browser-sync'),
-  reload      = browserSync.reload,
-  conf        = require('./gulpconf.json')
+  gulp            = require('gulp'),
+  cog             = require('gulp-cog'),
+  source          = require('vinyl-source-stream'),
+  buffer          = require('vinyl-buffer'),
+  rename          = require('gulp-rename'),
+  uglify          = require('gulp-uglify'),
+  sourcemaps      = require('gulp-sourcemaps'),
+  gutil           = require('gulp-util'),
+  concat          = require('gulp-concat'),
+  foreach         = require('gulp-foreach'),
+  browserSync     = require('browser-sync'),
+  stylus          = require('gulp-stylus'),
+  nib             = require('nib'),
+  stylusTypeUtils = require('stylus-type-utils'),
+  reload          = browserSync.reload,
+  conf            = require('./gulpconf.json')
 ;
 
 
@@ -38,12 +41,8 @@ gulp.task('js', function() {
     // Loop over the filtered files
     .pipe(foreach(function(stream, masterFile) {
       return stream
-        // Emit the files in order matching includes cog found in masterFile
-        // back into the stream.
         .pipe(cog.includes())
-        // Concat all the files together.
         .pipe(concat(masterFile.relative))
-        .on('error', gutil.log)
       ;
     }))
     .pipe(uglify(conf.js.uglify.cleanConf))
@@ -61,6 +60,18 @@ gulp.task('js', function() {
 
 });
 
+gulp.task('stylus', function(){
+  conf.stylus.options.fullCompression.use = [nib()];
+
+  gulp.src(conf.stylus.src)
+    .pipe(stylus(conf.stylus.options.fullCompression))
+    .on('error', gutil.log)
+    .pipe(gulp.dest(conf.stylus.dest))
+    .on('error', gutil.log)
+    .pipe(reload({ stream:true }))
+  ;
+});
+
 gulp.task('watch', function() {
 
   browserSync({
@@ -68,6 +79,10 @@ gulp.task('watch', function() {
       baseDir: conf.root
     }
   });
-  gulp.watch(conf.js.src, ['js']);
+  gulp
+    .watch(conf.js.src, ['js']);
+  gulp
+    .watch(conf.stylus.src, ['stylus'])
+  ;
 
 });

@@ -1,2 +1,0 @@
-# baruch-spinoza
--_-'

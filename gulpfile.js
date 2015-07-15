@@ -13,8 +13,10 @@ var
   foreach         = require('gulp-foreach'),
   browserSync     = require('browser-sync'),
   stylus          = require('gulp-stylus'),
+  ghPages         = require('gulp-gh-pages'),
   nib             = require('nib'),
   stylusTypeUtils = require('stylus-type-utils'),
+  datef           = require('date-format'),
   reload          = browserSync.reload,
   conf            = require('./gulpconf.json')
 ;
@@ -70,6 +72,14 @@ gulp.task('stylus', function(){
     .on('error', gutil.log)
     .pipe(reload({ stream:true }))
   ;
+});
+
+
+gulp.task('deploy', function() {
+  return gulp.src('./dist/**/*')
+    .pipe(ghPages({
+      message: ":construction_worker: Update " + datef(new Date()) + "."
+    }));
 });
 
 gulp.task('watch', function() {

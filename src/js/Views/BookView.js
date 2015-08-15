@@ -1,13 +1,11 @@
-baruchSpinoza.Views.Book = Backbone.View.extend({
-  tagName: 'section',
-  template: _.template('<section><img src="<%= cover %>" /><h1><%= title %> - <%= author %></h1><p><em><%= price %></em><small><%= isbn %></small></p></section>'),
-  className: 'book',
+baruchSpinoza.Views.BookCard = Marionette.ItemView.extend({
+  template: '#bookCard',
   initialize: function bookViewInitialize(){
-    this.listen(this.model, 'change', this.render);
-    this.render();
+    var globalCh = Backbone.Wreqr.radio.channel('global');
+    console.log('globalCh',globalCh);
+    globalCh.vent.on('domReady', this.ping);
   },
-  render: function bookViewRender(){
-    var self = this;
-      self.$el.html(self.template(self.model.toJSON()));
+  ping: function(){
+    console.log('PING !');
   }
 });

@@ -1,4 +1,5 @@
-// VERY VERY crude way to manage async deps... Sorry :/
+// VERY VERY crude way to manage async deps...
+var ULTRASTART = Date.now();
 var libLoad = function libLoad(libs){
   var rootScript = document.getElementsByTagName('script')[0];
   var loaded = [], mainDeps = [], mainLoad, main;
@@ -9,6 +10,7 @@ var libLoad = function libLoad(libs){
 
   var resolvingCallback = function resolvingCallback(lib){
     return function libLoaded(){
+      console.log(lib.name, 'took',  Date.now() - lib.loadStart + 'ms via', lib.src);
       lib.loaded = true;
       loaded.push(lib.name);
       reloadLibs(libs);
@@ -18,6 +20,7 @@ var libLoad = function libLoad(libs){
 
   var load = function load(lib){
     if(typeof lib.loaded === 'undefined' || !lib.loaded){
+      lib.loadStart = Date.now();
       rootScript.parentNode.insertBefore(lib.el, rootScript);
     }
     return lib;
@@ -26,7 +29,7 @@ var libLoad = function libLoad(libs){
   var allDependenciesMet = function allDependenciesMet(deps){
     var okay = true;
     for (var i = deps.length - 1; i >= 0; i--) {
-      okay = okay && !(loaded.indexOf(deps[i]) === -1);
+      okay &= (loaded.indexOf(deps[i]) === -1) !== true;
     }
     return okay;
   };
@@ -55,6 +58,7 @@ var libLoad = function libLoad(libs){
       el.onload = resolvingCallback(lib);
       lib.el = el;
       lib.name = libKey;
+      console.log('Dependencies',libKey, mainDeps);
       if( !hasDependencies(lib) ){
         load(lib);
       }else{
@@ -68,54 +72,42 @@ var libLoad = function libLoad(libs){
     if(allDependenciesMet(mainDeps)){
       main.call(window);
     }
-    clearInterval(interval.ID);
-  }
+    return clearInterval(interval.ID);
+  };
 
   return function libsLoaded(cb){
     var retry = {ID:0};
     main = cb;
-    retry.ID = setInterval(tryMainLoad, 100, cb, retry);
+    // retry.ID = setInterval(tryMainLoad, 100, cb, retry);
+    retry.ID = tryMainLoad(cb, retry);
   };
 };
 
 libLoad({
   jquery      : {
-    src: 'https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js'
+    // src: 'https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js'
+    src: 'https://cdn.jsdelivr.net/jquery/2.1.4/jquery.min.js'
+    // src: 'https://code.jquery.com/jquery-2.1.4.min.js'
   },
   underscore  : {
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore.js'
+    // src: 'https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore.js'
+    src: 'https://cdn.jsdelivr.net/underscorejs/1.8.3/underscore-min.js'
   },
   backbone    : {
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.2.1/backbone-min.js',
+    // src: 'https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.2.1/backbone.min.js',
+    src: 'https://cdn.jsdelivr.net/backbonejs/1.2.1/backbone-min.js',
     dependOn: ['jquery', 'underscore']
   },
   marionette  : {
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/backbone.marionette/2.4.2/backbone.marionette.min.js',
+    // src: 'https://cdnjs.cloudflare.com/ajax/libs/backbone.marionette/2.4.2/backbone.marionette.js',
+    src: 'https://cdn.jsdelivr.net/backbone.marionette/2.4.2/backbone.marionette.min.js',
     dependOn: ['backbone']
-  },
-  materialize : {
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js',
-    dependOn: ['jquery']
   }
 })(function libLoadedCallback(){
-
+var Marionette = Backbone.Marionette;
 
 var baruchSpinoza = {
   Models : {},
   Collections : {},
   Views : {}
 };
-// (function() {
-
-
-//   tk.src = 'https://use.typekit.com/' + TypekitConfig.kitId + '.js';
-//   tk.type = 'text/javascript';
-//   tk.async = 'true';
-//   tk.onload = tk.onreadystatechange = function() {
-//     var rs = this.readyState;
-//     if (rs && rs != 'complete' && rs != 'loaded') return;
-//     try { Typekit.load(TypekitConfig); } catch (e) {}
-//   };
-//   var s = document.getElementsByTagName('script')[0];
-//   s.parentNode.insertBefore(tk, s);
-// })();

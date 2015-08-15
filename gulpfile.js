@@ -57,7 +57,7 @@ gulp.task('js', function() {
     .pipe(gulp.dest(conf.js.dest))
     .pipe(sourcemaps.write(conf.js.sourcemaps.dest))
     .pipe(gulp.dest(conf.js.dest))
-    .pipe(reload({ stream:true }))
+    // .pipe(reload({ stream:true }))
   ;
 
 });
@@ -70,7 +70,7 @@ gulp.task('stylus', function(){
     .on('error', gutil.log)
     .pipe(gulp.dest(conf.stylus.dest))
     .on('error', gutil.log)
-    .pipe(reload({ stream:true }))
+    // .pipe(reload({ stream:true }))
   ;
 });
 

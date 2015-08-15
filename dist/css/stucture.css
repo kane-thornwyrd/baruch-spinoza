@@ -1,1 +1,1 @@
-body{display:flex;min-height:100vh;flex-direction:column}.main{flex:1 0 auto}.fixed-action-btn{top:-1em;right:1em}header h1{margin-top:0}.loader{width:100%;height:100%}.preloader-wrapper{margin:auto}.page-footer .row{margin-top:0}
+noscript{fixed:top left bottom right;max-width:50%;max-height:10%;margin:auto;text-align:center;background-clip:text;z-index:1000;}noscript:before{background:linear-gradient(top,rgba(200,200,200,0.5),rgba(255,255,255,0.5));fixed:top left bottom right;z-index:999;content:'';display:block}header > *{display:inline-block}

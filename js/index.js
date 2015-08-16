@@ -1,4 +1,7 @@
+var ULTRASTART = Date.now();
+
 var libLoad = function libLoad(libs) {
+  "use strict";
   var rootScript = document.getElementsByTagName("script")[0];
   var loaded = [], mainDeps = [], mainLoad, main;
   var hasDependencies = function hasDependencies(lib) {
@@ -6,6 +9,7 @@ var libLoad = function libLoad(libs) {
   };
   var resolvingCallback = function resolvingCallback(lib) {
     return function libLoaded() {
+      console.log(lib.name, "took", Date.now() - lib.loadStart + "ms via", lib.src);
       lib.loaded = true;
       loaded.push(lib.name);
       reloadLibs(libs);
@@ -14,6 +18,7 @@ var libLoad = function libLoad(libs) {
   };
   var load = function load(lib) {
     if (typeof lib.loaded === "undefined" || !lib.loaded) {
+      lib.loadStart = Date.now();
       rootScript.parentNode.insertBefore(lib.el, rootScript);
     }
     return lib;
@@ -21,7 +26,7 @@ var libLoad = function libLoad(libs) {
   var allDependenciesMet = function allDependenciesMet(deps) {
     var okay = true;
     for (var i = deps.length - 1; i >= 0; i--) {
-      okay = okay && !(loaded.indexOf(deps[i]) === -1);
+      okay &= loaded.indexOf(deps[i]) === -1 !== true;
     }
     return okay;
   };
@@ -44,6 +49,7 @@ var libLoad = function libLoad(libs) {
       el.onload = resolvingCallback(lib);
       lib.el = el;
       lib.name = libKey;
+      console.log("Dependencies", libKey, mainDeps);
       if (!hasDependencies(lib)) {
         load(lib);
       } else {
@@ -62,178 +68,285 @@ var libLoad = function libLoad(libs) {
     if (allDependenciesMet(mainDeps)) {
       main.call(window);
     }
-    clearInterval(interval.ID);
+    return clearInterval(interval.ID);
   };
   return function libsLoaded(cb) {
     var retry = {
       "ID": 0
     };
     main = cb;
-    retry.ID = setInterval(tryMainLoad, 100, cb, retry);
+    retry.ID = tryMainLoad(cb, retry);
   };
 };
 
 libLoad({
   "jquery": {
-    "src": "https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"
+    "src": "https://cdn.jsdelivr.net/jquery/2.1.4/jquery.min.js"
   },
   "underscore": {
-    "src": "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore.js"
-  },
-  "backbone": {
-    "src": "https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.2.1/backbone-min.js",
-    "dependOn": [ "jquery", "underscore" ]
-  },
-  "marionette": {
-    "src": "https://cdnjs.cloudflare.com/ajax/libs/backbone.marionette/2.4.2/backbone.marionette.min.js",
-    "dependOn": [ "backbone" ]
-  },
-  "materialize": {
-    "src": "https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.0/js/materialize.min.js",
-    "dependOn": [ "jquery" ]
+    "src": "https://cdn.jsdelivr.net/underscorejs/1.8.3/underscore-min.js"
   }
 })(function libLoadedCallback() {
-  var baruchSpinoza = {
-    "Models": {},
-    "Collections": {},
-    "Views": {}
-  };
-  var domReady = function() {
-    var isTop, testDiv, scrollIntervalId, isBrowser = typeof window !== "undefined" && window.document, isPageLoaded = !isBrowser, doc = isBrowser ? document : null, readyCalls = [];
-    function runCallbacks(callbacks) {
-      var i;
-      for (i = 0; i < callbacks.length; i += 1) {
-        callbacks[i](doc);
-      }
-    }
-    function callReady() {
-      var callbacks = readyCalls;
-      if (isPageLoaded) {
-        if (callbacks.length) {
-          readyCalls = [];
-          runCallbacks(callbacks);
-        }
-      }
-    }
-    function pageLoaded() {
-      if (!isPageLoaded) {
-        isPageLoaded = true;
-        if (scrollIntervalId) {
-          clearInterval(scrollIntervalId);
-        }
-        callReady();
-      }
-    }
-    if (isBrowser) {
-      if (document.addEventListener) {
-        document.addEventListener("DOMContentLoaded", pageLoaded, false);
-        window.addEventListener("load", pageLoaded, false);
-      } else {
-        if (window.attachEvent) {
-          window.attachEvent("onload", pageLoaded);
-          testDiv = document.createElement("div");
-          try {
-            isTop = window.frameElement === null;
-          } catch (e) {}
-          if (testDiv.doScroll && isTop && window.external) {
-            scrollIntervalId = setInterval(function() {
-              try {
-                testDiv.doScroll();
-                pageLoaded();
-              } catch (e) {}
-            }, 30);
-          }
-        }
-      }
-      if (document.readyState === "complete") {
-        pageLoaded();
-      }
-    }
-    /**
-   * Registers a callback for DOM ready. If DOM is already ready, the
-   * callback is called immediately.
-   * @param {Function} callback
-   */
-    function domReady(callback) {
-      if (isPageLoaded) {
-        callback(doc);
-      } else {
-        readyCalls.push(callback);
-      }
-      return domReady;
-    }
-    domReady.version = "2.0.1";
-    domReady.load = function(name, req, onLoad, config) {
-      if (config.isBuild) {
-        onLoad(null);
-      } else {
-        domReady(onLoad);
-      }
+  "use strict";
+  $(function() {
+    $("html").removeClass("no-js").addClass("js");
+    _.templateSettings = {
+      "interpolate": /\{\{= (.+?)\}\}/g,
+      "escape": /\{\{!(.+?)\}\}/g,
+      "evaluate": /\{\{(.+?)\s\}\}/g
     };
-    return domReady;
-  }();
-  baruchSpinoza.Models.Book = Backbone.Model.extend({
-    "defaults": {
-      "isbn": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-      "title": "default title",
-      "author": "Jeanne Catherine Rangeant",
-      "price": 0,
-      "cover": "http://placekitten.com/g/200/300"
-    }
-  });
-  baruchSpinoza.Collections.Book = Backbone.Collection.extend({
-    "model": baruchSpinoza.Models.Book
-  });
-  baruchSpinoza.Views.BookCollection = Backbone.View.extend({
-    "tagName": "ul",
-    "render": function bookCollectionViewRender() {
-      var self = this;
-      domReady(function bookCollectionViewRenderDomReady() {
-        self.collection.each(function() {
-          console.log("COloction: ", arguments);
+    (function(t, e) {
+      "use strict";
+      var n = {
+        "pulses": 1,
+        "interval": 0,
+        "returnDelay": 0,
+        "duration": 500
+      };
+      t.fn.pulse = function(u, a, r) {
+        var i = "destroy" === u;
+        return "function" == typeof a && (r = a, a = {}), a = t.extend({}, n, a), a.interval >= 0 || (a.interval = 0), 
+        a.returnDelay >= 0 || (a.returnDelay = 0), a.duration >= 0 || (a.duration = 500), 
+        a.pulses >= -1 || (a.pulses = 1), "function" != typeof r && (r = function() {}), 
+        this.each(function() {
+          function n() {
+            return void 0 === s.data("pulse") || s.data("pulse").stop ? void 0 : a.pulses > -1 && ++p > a.pulses ? r.apply(s) : (s.animate(u, f), 
+            void 0);
+          }
+          var o, s = t(this), l = {}, d = s.data("pulse") || {};
+          d.stop = i, s.data("pulse", d);
+          for (o in u) {
+            u.hasOwnProperty(o) && (l[o] = s.css(o));
+          }
+          var p = 0, c = t.extend({}, a);
+          c.duration = a.duration / 2, c.complete = function() {
+            e.setTimeout(n, a.interval);
+          };
+          var f = t.extend({}, a);
+          f.duration = a.duration / 2, f.complete = function() {
+            e.setTimeout(function() {
+              s.animate(l, c);
+            }, a.returnDelay);
+          }, n();
         });
-      });
-    },
-    "renderBook": function bookCollectionViewRenderBook(book) {
-      var bookView = new baruchSpinoza.Views.Book({
-        "model": book
-      });
-    }
-  });
-  baruchSpinoza.Views.Book = Backbone.View.extend({
-    "tagName": "section",
-    "template": _.template('<section><img src="<%= cover %>" /><h1><%= title %> - <%= author %></h1><p><em><%= price %></em><small><%= isbn %></small></p></section>'),
-    "className": "book",
-    "initialize": function bookViewInitialize() {
-      this.listen(this.model, "change", this.render);
-      this.render();
-    },
-    "render": function bookViewRender() {
-      var self = this;
-      self.$el.html(self.template(self.model.toJSON()));
-    }
-  });
-  var conf = {
-    "bookRegistry": {
-      "url": "http://henri-potier.xebia.fr/books",
-      "settings": {
-        "accepts": [ "text/json" ],
-        "cache": false,
-        "dataType": "json",
-        "ifModified": true
+      };
+    })(jQuery, window, document);
+    /*
+ * pluginMaker
+ * Easy jQuery plugin registering.
+ *
+ * @module pluginMaker
+ *
+ * Copyright (c) 2014 Jean-cédric Thérond - Cellfish Media France
+ * Proprietary Software.
+ */
+    $.pluginMaker = $.pluginMaker || function(Plugin) {
+      $.fn[Plugin.prototype.meta.name] = function(options) {
+        var args = $.makeArray(arguments), after = args.slice(1);
+        return this.each(function() {
+          var instance = $.data(this, "_" + Plugin.prototype.meta.name);
+          if (instance) {
+            if (typeof options === "string") {
+              instance[options].apply(instance, after);
+            } else {
+              if (instance.update) {
+                instance.update.apply(instance, args);
+              }
+            }
+          } else {
+            var def = Plugin.prototype.defaultConf;
+            if (def) {
+              options = $.extend(true, {}, def, options);
+            }
+            var $this = $(this).addClass(Plugin.prototype.meta.name);
+            instance = new Plugin($this, options);
+            $this.data("_" + Plugin.prototype.meta.name, instance);
+            if (instance.teardown) {
+              $this.bind("destroyed", $.proxy(instance.teardown, instance));
+            } else {
+              $this.one("destroyed", function() {
+                $this.removeData("_" + Plugin.prototype.meta.name, instance).removeClass(Plugin.prototype.meta.name);
+              });
+            }
+          }
+        });
+      };
+      return $.fn[Plugin.prototype.meta.name];
+    };
+    var ShoppingCart = function ShoppingCart($el, options) {
+      "use strict";
+      this.attr = _.extend({}, this.defaults, options);
+      this.attr.commercialBackendRequestTemplate = _.template(_.template(this.attr.commercialBackendRequestTemplate)({
+        "algorithm": ShoppingCart.prototype.isbnConcatAlgorithms[this.attr.isbnConcatAlgorithms]()
+      }));
+      this.attr.$el = $el;
+      this.counter = $('<span class="item-count hide"></span>');
+      this.attr.$el.append(this.counter);
+      return this.listen();
+    };
+    _.extend(ShoppingCart.prototype, {
+      "meta": {
+        "name": "ShoppingCart"
+      },
+      "defaults": {
+        "cart": [],
+        "indexKey": "isbn",
+        "isbnConcatAlgorithms": "single",
+        "commercialBackendRequestTemplate": "http://henri-potier.xebia.fr/books/{{= algorithm }}/commercialOffers",
+        "cartView": undefined
+      },
+      "availableISBNConcatAlgorithms": [ "single", "multiple" ],
+      "listen": function shoppingCartListen() {
+        "use strict";
+        this.cartViewState = !this.attr.cartView.hasClass("hide");
+        var cartToggleCB = _.partial(this.cartButtonCallback, this);
+        this.attr.cartView.on("click", ".close", cartToggleCB);
+        this.attr.$el.on("click", cartToggleCB);
+        return this;
+      },
+      "cartButtonCallback": function shoppingCartCartButtonCallback(ctx, e) {
+        "use strict";
+        e.preventDefault();
+        e.stopPropagation();
+        if (ctx.cartViewState) {
+          ctx.hideCart();
+        } else {
+          ctx.showCart();
+        }
+      },
+      "showCart": function shoppingCartShowCart() {
+        "use strict";
+        this.attr.cartView.slideUp().removeClass("hide");
+        this.cartViewState = true;
+      },
+      "hideCart": function shoppingCartHideCart() {
+        "use strict";
+        this.attr.cartView.slideDown().addClass("hide");
+        this.cartViewState = false;
+      },
+      "isbnConcatAlgorithms": {
+        "single": function singleIsbnConcatAlgorithm() {
+          "use strict";
+          return "{{= _.pluck(books, 'isbn').join(',') }}";
+        },
+        "multiple": function singleIsbnConcatAlgorithm() {
+          "use strict";
+          var helper = "var algo = function concatAlgo(books){" + "var book, i, isbns=[], len, y;" + "_.each(books, function(book){_(book.quantity).times(function(n){isbns.push(book.isbn);});});" + "return isbns.join(',');" + "};";
+          return "{{" + helper + "}}{{= algo(books) }}";
+        }
+      },
+      "push": function shoppingCartPush(input) {
+        "use strict";
+        if (_.isArray(input)) {
+          for (var book in input) {
+            if (input.hasOwnProperty(book)) {
+              this.push(book);
+            }
+          }
+        } else {
+          var alreadyInCart = this.itemAlreadyInCart(input);
+          var _self = this;
+          if (!alreadyInCart) {
+            alreadyInCart = _.extend({
+              "quantity": 0,
+              "addOne": function itemAddOne() {
+                alreadyInCart.quantity++;
+                _self.increaseCounter.call(_self);
+              }
+            }, input);
+            this.attr.cart.push(alreadyInCart);
+          }
+          alreadyInCart.addOne();
+        }
+      },
+      "getItemsAmount": function shoppingCartGetItemsAmount() {
+        "use strict";
+        return _.reduce(_.pluck(this.attr.cart, "quantity"), function(m, v) {
+          return m + v;
+        });
+      },
+      "increaseCounter": function shoppingCartIncreaseCounter(amount) {
+        "use strict";
+        amount = amount || 1;
+        var prev = this.counter.data("amount") || 0;
+        this.counter.data("amount", prev + amount);
+        return this.refreshCounter();
+      },
+      "decreaseCounter": function shoppingCartDecreaseCounter(amount) {
+        "use strict";
+        amount = amount || 1;
+        var prev = this.counter.data("amount") || 0;
+        this.counter.data("amount", prev - amount);
+        return this.refreshCounter();
+      },
+      "resetCounter": function shoppingCartresetCounter() {
+        "use strict";
+        this.counter.data("amount", 0);
+        return this.refreshCounter();
+      },
+      "refreshCounter": function shoppingCartrefreshCounter() {
+        "use strict";
+        var amount = this.counter.data("amount") || this.getItemsAmount();
+        this.counter.html(amount);
+        if (amount) {
+          this.counter.removeClass("hide");
+        } else {
+          this.counter.addClass("hide");
+        }
+        return this;
+      },
+      "itemAlreadyInCart": function shoppingCartItemAlreadyInCart(item) {
+        "use strict";
+        var select = {};
+        select[this.attr.indexKey] = item[this.attr.indexKey];
+        return this.get(select);
+      },
+      "get": function shoppingCartGet(select) {
+        "use strict";
+        return _.findWhere(this.attr.cart, select) || false;
+      },
+      "askPrice": function shoppingCartAskPrice() {
+        "use strict";
+        console.log(this.attr.commercialBackendRequestTemplate({
+          "books": this.attr.cart
+        }));
       }
-    }
-  };
-  domReady(function() {
-    $(".button-collapse").sideNav();
-    $(".main-loader").addClass("hidden").hide();
-  });
-  var bookRegistryRequest = $.ajax(conf.bookRegistry.url, conf.bookRegistry.settings);
-  var books;
-  bookRegistryRequest.then(function bookRegistryRequestSuccess(data, status, jqXHR) {
-    var books = new baruchSpinoza.Collections.Book(data);
-    console.log("BOOKS: ", books);
-  }, function bookRegistryRequestFail(data, status, jqXHR) {
-    console.log("FAIL: ", arguments);
+    });
+    $.pluginMaker(ShoppingCart);
+    var books = $.ajax("http://henri-potier.xebia.fr/books"), shoppingCart = $("#shoppingCartAccess").ShoppingCart({
+      "cartView": $("#cart")
+    }).data("_ShoppingCart"), TPLs = {
+      "bookFullTpl": _.template(window.bookFull.innerHTML),
+      "booksTpl": _.template(window.books.innerHTML)
+    }, $mainContainer = $(".main-container"), $loader = $(".loader");
+    var addingCallback = function addingCallback(e) {
+      "use strict";
+      e.preventDefault();
+      e.stopPropagation();
+      var $this = $(this);
+      var book = _.findWhere(books, {
+        "isbn": $this.data("isbn")
+      });
+      shoppingCart.push(book);
+      setTimeout(function() {
+        $this.blur();
+      }, 10);
+    };
+    books.done(function(data, textStatus, jqXHR) {
+      "use strict";
+      books = data;
+      $mainContainer.append(TPLs.booksTpl({
+        "books": books,
+        "bookTpl": TPLs.bookFullTpl
+      })).find("button.add").on("click", addingCallback);
+    });
+    books.fail(function(jqXHR, textStatus, error) {
+      "use strict";
+      $mainContainer.append(booksTpl());
+    });
+    books.always(function() {
+      "use strict";
+      $loader.hide();
+    });
   });
 });
